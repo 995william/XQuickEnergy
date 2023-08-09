@@ -6,7 +6,6 @@ import pansong291.xposed.quickenergy.hook.AntFarmRpcCall;
 import pansong291.xposed.quickenergy.hook.DadaDailyRpcCall;
 import pansong291.xposed.quickenergy.util.*;
 
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -283,14 +282,6 @@ public class AntFarm {
         }
     }
 
-    private static boolean isEnterOwnerFarm(String resp) {
-        return resp.contains("\"relation\":\"OWNER\"");
-    }
-
-    public static boolean isEnterFriendFarm(String resp) {
-        return resp.contains("\"relation\":\"FRIEND\"");
-    }
-
     private static void syncAnimalStatus(String farmId) {
         try {
             String s = AntFarmRpcCall.syncAnimalStatus(farmId);
@@ -481,12 +472,12 @@ public class AntFarm {
             String memo = jo.getString("memo");
             if (memo.equals("SUCCESS")) {
                 JSONArray jaActivityInfos = jo.getJSONArray("activityInfos");
-                String activityId = null, activityName = null;
+                String activityId = null, projectName = null;
                 for (int i = 0; i < jaActivityInfos.length(); i++) {
                     jo = jaActivityInfos.getJSONObject(i);
                     if (!jo.get("donationTotal").equals(jo.get("donationLimit"))) {
                         activityId = jo.getString("activityId");
-                        activityName = jo.optString("activityName", activityId);
+                        projectName = jo.optString("projectName", activityId);
                         break;
                     }
                 }
@@ -499,7 +490,7 @@ public class AntFarm {
                     if (memo.equals("SUCCESS")) {
                         jo = jo.getJSONObject("donation");
                         harvestBenevolenceScore = jo.getDouble("harvestBenevolenceScore");
-                        Log.farm("捐赠活动[" + activityName + "]，累计捐赠[" + jo.getInt("donationTimesStat") + "次]");
+                        Log.farm("捐赠活动[" + projectName + "]，累计捐赠[" + jo.getInt("donationTimesStat") + "次]");
                         Statistics.donationEgg();
                     } else {
                         Log.recordLog(memo, s);
@@ -619,16 +610,15 @@ public class AntFarm {
             JSONObject jo = new JSONObject(AntFarmRpcCall.initFarmGame(gameType.name()));
             if (jo.getString("memo").equals("SUCCESS")) {
                 JSONObject gameAward = jo.getJSONObject("gameAward");
-                Boolean level3Get = gameAward.getBoolean("level3Get");
                 if (gameAward.getBoolean("level3Get"))
                     return;
                 jo = new JSONObject(AntFarmRpcCall.recordFarmGame(gameType.name()));
                 if (jo.getString("memo").equals("SUCCESS")) {
                     JSONArray awardInfos = jo.getJSONArray("awardInfos");
-                    String award = "";
+                    StringBuilder award = new StringBuilder();
                     for (int i = 0; i < awardInfos.length(); i++) {
                         jo = awardInfos.getJSONObject(i);
-                        award = award + jo.getString("awardName") + "*" + jo.getInt("awardCount");
+                        award.append(jo.getString("awardName")).append("*").append(jo.getInt("awardCount"));
                     }
                     Log.farm("玩游戏[" + gameType.gameName() + "]获得[" + award + "]");
                 } else {
@@ -667,7 +657,7 @@ public class AntFarm {
                         } else {
                             Log.recordLog(jo.getString("memo"), jo.toString());
                         }
-                    } else if (title.equals("庄园小视频") && jo.getString("taskStatus").equals("TODO")) {
+                    } else if ("庄园小视频".equals(title) && jo.getString("taskStatus").equals("TODO")) {
                         awardCount = jo.getInt("awardCount");
                         jo = new JSONObject(AntFarmRpcCall.queryTabVideoUrl());
                         if (jo.getString("memo").equals("SUCCESS")) {
@@ -752,7 +742,7 @@ public class AntFarm {
         }
     }
 
-    private static boolean sign(JSONObject signList) {
+    private static void sign(JSONObject signList) {
         try {
             JSONArray jaFarmsignList = signList.getJSONArray("signList");
             boolean signed = true;
@@ -779,7 +769,6 @@ public class AntFarm {
             Log.i(TAG, "Farmsign err:");
             Log.printStackTrace(TAG, t);
         }
-        return false;
     }
 
     private static void feedAnimal(String farmId) {

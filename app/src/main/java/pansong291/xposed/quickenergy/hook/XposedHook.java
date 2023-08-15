@@ -33,6 +33,8 @@ public class XposedHook implements IXposedHookLoadPackage {
     private static Runnable runnable;
     private static int times;
 
+    private static boolean isHooked = false;
+
     public enum StayAwakeType {
         BROADCAST, ALARM, NONE;
         public static final CharSequence[] nickNames =
@@ -57,7 +59,8 @@ public class XposedHook implements IXposedHookLoadPackage {
                     });
         }
 
-        if (ClassMember.PACKAGE_NAME.equals(lpparam.packageName)) {
+        if (!isHooked && ClassMember.PACKAGE_NAME.equals(lpparam.packageName)) {
+            isHooked = true;
             Log.i(TAG, lpparam.packageName);
             classLoader = lpparam.classLoader;
             hookRpcCall(lpparam.classLoader);
@@ -71,33 +74,38 @@ public class XposedHook implements IXposedHookLoadPackage {
             Config.setAlarm7(AntForestToast.context);
         }
         if (runnable == null) {
+            FriendManager.fillUser(XposedHook.classLoader);
+
             runnable = new Runnable() {
                 @Override
                 public void run() {
-                    Config.shouldReload = true;
-                    Statistics.resetToday();
-                    AntForest.checkEnergyRanking(XposedHook.classLoader, times);
 
-                    FriendManager.fillUser(XposedHook.classLoader);
+                    String targetUid = RpcUtil.getUserId(XposedHook.classLoader);
+                    if (targetUid != null ) {
+                        FriendIdMap.currentUid = targetUid;
 
-                    if (TimeUtil.getTimeStr().compareTo("0700") < 0 || TimeUtil.getTimeStr().compareTo("0730") > 0) {
-                        AntCooperate.start();
-                        AntFarm.start();
-                        Reserve.start();
-                        if (TimeUtil.getTimeStr().compareTo("0800") >= 0) {
-                            AncientTree.start();
+                        Config.shouldReload = true;
+                        Statistics.resetToday();
+                        AntForest.checkEnergyRanking(XposedHook.classLoader, times);
+
+                        if (TimeUtil.getTimeStr().compareTo("0700") < 0 || TimeUtil.getTimeStr().compareTo("0730") > 0) {
+                            AntCooperate.start();
+                            AntFarm.start();
+                            Reserve.start();
+                            if (TimeUtil.getTimeStr().compareTo("0800") >= 0) {
+                                AncientTree.start();
+                            }
+                            AntSports.start(XposedHook.classLoader, times);
+                            AntMember.receivePoint();
+                            AntOcean.start();
                         }
-                        AntSports.start(XposedHook.classLoader, times);
-                        AntMember.receivePoint();
-                        AntOcean.start();
+                        times = (times + 1) % (3600_000 / Config.checkInterval());
                     }
-
                     if (Config.collectEnergy() || Config.enableFarm()) {
                         handler.postDelayed(this, Config.checkInterval());
                     } else {
                         AntForestNotification.stop(service, false);
                     }
-                    times = (times + 1) % (3600_000 / Config.checkInterval());
                 }
             };
         }
@@ -121,6 +129,7 @@ public class XposedHook implements IXposedHookLoadPackage {
                             FriendIdMap.currentUid = targetUid;
                             if (handler != null) {
                                 Log.recordLog("尝试初始化");
+                                times = 0;
                                 initHandler();
                             }
                         }

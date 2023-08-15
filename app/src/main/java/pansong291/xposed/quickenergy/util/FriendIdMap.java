@@ -1,9 +1,10 @@
 package pansong291.xposed.quickenergy.util;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 public class FriendIdMap {
     private static final String TAG = FriendIdMap.class.getCanonicalName();
@@ -78,19 +79,19 @@ public class FriendIdMap {
         return id;
     }
 
-    public static List<String> getIncompleteUnknownIds() {
-        List<String> idList = new ArrayList<>();
-        for (Map.Entry<String, String> entry : getIdMap().entrySet()) {
-            if ("我".equals(entry.getValue())) {
-                continue;
-            }
-            if (entry.getValue().split("\\|").length < 2) {
-                idList.add(entry.getKey());
-                // Log.i(TAG, "未知id: " + entry.getKey());
-            }
-        }
-        return idList;
-    }
+//    public static List<String> getIncompleteUnknownIds() {
+//        List<String> idList = new ArrayList<>();
+//        for (Map.Entry<String, String> entry : getIdMap().entrySet()) {
+//            if ("我".equals(entry.getValue())) {
+//                continue;
+//            }
+//            if (entry.getValue().split("\\|").length < 2) {
+//                idList.add(entry.getKey());
+//                // Log.i(TAG, "未知id: " + entry.getKey());
+//            }
+//        }
+//        return idList;
+//    }
 
     public static List<String> getFriendIds() {
         List<String> idList = new ArrayList<>();
